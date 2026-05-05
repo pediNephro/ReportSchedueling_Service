@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         MS_NAME = 'ReportSchedueling_Service'        // ← change this
-        IMAGE_NAME = 'brahimbk/ReportSchedueling_Service'  // ← change this
+       IMAGE_NAME = 'brahimbk/report-scheduling'  // ← change this
         IMAGE_TAG = 'latest'
         DOCKER_CREDS = credentials('docker-hub-credentials')
     }
@@ -12,17 +12,15 @@ pipeline {
 
         stage('1 — Checkout') {
             steps {
-                git branch: 'master',
-                    url: 'https://github.com/pediNephro/ReportSchedueling_Service.git',
-                    
+ git branch: 'master',
+     url: 'https://github.com/pediNephro/ReportSchedueling_Service.git'
+
             }
         }
 
-        stage('2 — Build Maven') {
+       stage('2 — Build Maven') {
             steps {
-                dir("${MS_NAME}") {
-                    sh 'mvn clean package -DskipTests'
-                }
+                sh 'mvn clean package -DskipTests'
             }
         }
 
