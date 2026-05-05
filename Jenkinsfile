@@ -2,57 +2,58 @@ pipeline {
     agent any
 
     environment {
-        MS_NAME = 'ReportSchedueling_Service'        // ← change this
-       IMAGE_NAME = 'brahimbk/report-scheduling'  // ← change this
+        IMAGE_NAME = 'brahimbk/report-scheduling'
         IMAGE_TAG = 'latest'
-        DOCKER_CREDS = credentials('docker-hub-credentials')
     }
 
     stages {
 
         stage('1 — Checkout') {
             steps {
- git branch: 'master',
-     url: 'https://github.com/pediNephro/ReportSchedueling_Service.git'
-
+                git branch: 'master',
+                    url: 'https://github.com/pediNephro/ReportSchedueling_Service.git'
             }
         }
 
-       stage('2 — Build Maven') {
+        stage('2 — Build Maven') {
             steps {
                 sh 'mvn clean package -DskipTests'
             }
         }
 
-       stage('3 - Tests') {
-           steps {
-               sh 'mvn test || true'
-           }
-           post {
-               always {
-                   script {
-                       if (fileExists('target/surefire-reports')) {
-                           junit 'target/surefire-reports/*.xml'
-                       } else {
-                           echo 'No test reports found - skipping junit publish'
-                       }
-                   }
-               }
-           }
-       }
+        stage('3 - Tests') {
+            steps {
+                sh 'mvn test || true'
+            }
+            post {
+                always {
+                    script {
+                        if (fileExists('target/surefire-reports')) {
+                            junit 'target/surefire-reports/*.xml'
+                        } else {
+                            echo 'No test reports found - skipping junit publish'
+                        }
+                    }
+                }
+            }
+        }
 
         stage('4 — Docker Build') {
             steps {
-                dir("${MS_NAME}") {
-                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
-                }
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
 
         stage('5 — Docker Push') {
             steps {
-                sh "echo ${DOCKER_CREDS_PSW} | docker login -u ${DOCKER_CREDS_USR} --password-stdin"
-                sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                    sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
+                }
             }
         }
     }
@@ -68,4 +69,4 @@ pipeline {
             sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true"
         }
     }
-}
+}}
